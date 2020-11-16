@@ -52,7 +52,9 @@ def FK_dh(dh_params, joint_angles, link=4):
     for a in A:
         tf = np.matmul(tf, a)
     
-    return get_pose_from_T(tf)
+    (x,y,z,phi) = get_pose_from_T(tf)
+    phi = clamp(phi+1.5707)
+    return [x,y,z,phi]
 
 
 
@@ -127,12 +129,12 @@ def get_pose_from_T(T):
 
     @return     The pose from T.
     """
-    phi = np.arctan2(T[0,2],T[0,0])
+    # phi = np.arctan2(T[0,2],T[0,0])
     T = np.array(T)
     x = T[0,3]
     y = T[1,3]
     z = T[2,3]
-    # _,phi,_ = get_euler_angles_from_T(T)
+    _,phi,_ = get_euler_angles_from_T(T)
 
     return [x,y,z,phi]
 
@@ -200,4 +202,63 @@ def IK_geometric(dh_params, pose):
     @return     All four possible joint configurations in a numpy array 4x4 where each row is one possible joint
                 configuration
     """
-    pass
+    x,y,z,phi = pose
+    R = [[np.cos(phi), -np.sin(phi), 0],[np.sin(phi), np.cos(phi), 0],[0,0,1]]
+    oc = [x,y,z] - np.matmul(R, [[0],[0],[1]])
+    oc = oc.flatten()
+
+    t1 = np.arctan2(oc[1], oc[0]) 
+    tx1 = clamp(np.pi + t1)
+
+    r2 = oc[0]**2+oc[1]**2; s2 = (oc[3] - l1)**2
+    t3 = np.arccos(((r2+s2) - l2**2-l3**2)/(2*l2*l3)); ty3 = clamp(-t3) 
+
+    t2 = arctan2(np.sqrt(s), np.sqrt(r)) - np.arctan2(l3*np.sin(t3), l2*np.cos(t3))
+    ty2 = arctan2(np.sqrt(s), np.sqrt(r)) - np.arctan2(l3*np.sin(ty3), l2*np.cos(ty3))
+
+    R03 = [[np.cos(t1)*np.cos(t2*t3), -np.cos(t1)*np.sin(t2*t3), np.sin(t1)],
+           [np.sin(t1)*np.cos(t2*t3), -np.sin(t1)*np.sin(t2*t3), -np.cos(t1)],
+           [np.sin(t2*t3), np.cos(t2*t3), 0]]
+    R36 = np.linalg.inv(R03)*R 
+
+
+    R03x = [[np.cos(tx1)*np.cos(t2*t3), -np.cos(tx1)*np.sin(t2*t3), np.sin(tx1)],
+           [np.sin(tx1)*np.cos(t2*t3), -np.sin(tx1)*np.sin(t2*t3), -np.cos(tx1)],
+           [np.sin(t2*t3), np.cos(t2*t3), 0]]
+    R36x = np.linalg.inv(R03x)*R 
+
+
+    R03y = [[np.cos(t1)*np.cos(ty2*ty3), -np.cos(t1)*np.sin(ty2*ty3), np.sin(t1)],
+           [np.sin(t1)*np.cos(ty2*ty3), -np.sin(t1)*np.sin(ty2*ty3), -np.cos(t1)],
+           [np.sin(ty2*ty3), np.cos(t2*t3), 0]]
+    R36y = np.linalg.inv(R03y)*R 
+
+    R03xy = [[np.cos(tx1)*np.cos(ty2*ty3), -np.cos(tx1)*np.sin(ty2*ty3), np.sin(tx1)],
+           [np.sin(tx1)*np.cos(ty2*ty3), -np.sin(tx1)*np.sin(ty2*ty3), -np.cos(tx1)],
+           [np.sin(ty2*ty3), np.cos(ty2*ty3), 0]]
+    R36xy = np.linalg.inv(R03xy)*R 
+
+
+    t4 = np.arctan2(R36[1,2], R36[0,2])
+    t5 = np.arctan2(np.sqrt(1 - R36[2,2]**2), R36[2,2])
+    t6 = np.arctan2(R36[2,1], -R36[2,0])
+
+    tx5 = np.arctan2(np.sqrt(1 - R36x[2,2]**2), R36x[2,2])
+    tx6 = np.arctan2(R36x[2,1], -R36x[2,0])
+
+    ty5 = np.arctan2(np.sqrt(1 - R36[2,2]**2), R36[2,2])
+    ty6 = np.arctan2(R36[2,1], -R36[2,0])
+
+    txy5 = np.arctan2(np.sqrt(1 - R36xy[2,2]**2), R36xy[2,2])
+    txy6 = np.arctan2(R36xy[2,1], -R36xy[2,0])
+
+
+    first   = [t1,t2,t3,t5,t6]
+    second  = [tx1, t2, t3, tx5, tx6]
+    third   = [t1, ty2, ty3, ty5, ty6]
+    forth   = [tx1, ty2, ty3, txy5, txy6]
+
+    solution = np.asarray([first,second, third, forth])
+
+    return solution
+
