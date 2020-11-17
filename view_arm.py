@@ -90,9 +90,17 @@ while 1:
 		control_joint(4, angle, -3.14159265359, 3.14159265359)
 	
 	joint_angles = [x[0] for x in p.getJointStates(arm, [0,1,2,3,4])]
-	# joint_angles[1]+=c1 
-	# joint_angles[2]+=c2
-	print('GROUND TRUTH EE POSE: ',p.getLinkState(arm, 11)[0], p.getEulerFromQuaternion(p.getLinkState(arm, 11)[1])[1])
-	print('FK DH POSE          : ',FK_dh(dh_params, joint_angles))
-	print('FK POX              : ',FK_pox(joint_angles, m_mat, screw_list))
+	
+
+	# print('GROUND TRUTH EE POSE: ',p.getLinkState(arm, 11)[0], p.getEulerFromQuaternion(p.getLinkState(arm, 11)[1])[1])
+	# print('FK DH POSE          : ',FK_dh(dh_params, joint_angles))
+	# print('FK POX              : ',FK_pox(joint_angles, m_mat, screw_list))
+	# print(' ')
+
+	po = p.getLinkState(arm, 11)[0]
+	rot = quaternion_to_rot_matrix(p.getLinkState(arm, 11)[1])
+	pose = (po, rot)
+
+	print('GT Joint angles: ', joint_angles)
+	print('IK Joint angles: ', IK_geometric(dh_params, pose))
 	print(' ')

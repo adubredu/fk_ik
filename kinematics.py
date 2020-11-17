@@ -188,7 +188,13 @@ def to_s_matrix(w,v):
     S = [[0, -w[2], w[1], v[0]], [w[2], 0, -w[0], v[1]], [-w[1], w[0], 0, v[2]], [0, 0, 0, 0]]
     return S
 
-    
+
+def quaternion_to_rot_matrix(quaternion):
+    qx=quaternion[0]; qy=quaternion[1]; qz=quaternion[2]; qw=quaternion[3]
+    rot_matrix = [[1 - 2*qy**2 - 2*qz**2, 2*qx*qy - 2*qz*qw, 2*qx*qz + 2*qy*qw],
+                  [2*qx*qy + 2*qz*qw, 1 - 2*qx**2 - 2*qz**2, 2*qy*qz - 2*qx*qw],
+                  [2*qx*qz - 2*qy*qw, 2*qy*qz + 2*qx*qw, 1 - 2*qx**2 - 2*qy**2]]
+    return np.asarray(rot_matrix)
 
 def IK_geometric(dh_params, pose):
     """!
@@ -202,19 +208,24 @@ def IK_geometric(dh_params, pose):
     @return     All four possible joint configurations in a numpy array 4x4 where each row is one possible joint
                 configuration
     """
-    x,y,z,phi = pose
-    R = [[np.cos(phi), -np.sin(phi), 0],[np.sin(phi), np.cos(phi), 0],[0,0,1]]
-    oc = [x,y,z] - np.matmul(R, [[0],[0],[1]])
-    oc = oc.flatten()
+    l1 = 0.10391; l2 = 0.20573; l3 = 0.2; l4 = 0.17415; l6 = 0.17415;
+    x,y,z = pose[0]
+    R = pose[1]
+    # R = [[np.cos(phi), -np.sin(phi), 0],[np.sin(phi), np.cos(phi), 0],[0,0,1]]
+    oc = [0,0,0] 
+
+    oc[0] = x - l6*R[0,2]
+    oc[1] = y - l6*R[1,2]
+    oc[2] = z - l6*R[2,2] 
 
     t1 = np.arctan2(oc[1], oc[0]) 
     tx1 = clamp(np.pi + t1)
 
-    r2 = oc[0]**2+oc[1]**2; s2 = (oc[3] - l1)**2
-    t3 = np.arccos(((r2+s2) - l2**2-l3**2)/(2*l2*l3)); ty3 = clamp(-t3) 
+    r = oc[0]**2+oc[1]**2; s = (oc[2] - l1)**2
+    t3 = np.arccos(((r+s) - l2**2-l3**2)/(2*l2*l3)); ty3 = clamp(-t3) 
 
-    t2 = arctan2(np.sqrt(s), np.sqrt(r)) - np.arctan2(l3*np.sin(t3), l2*np.cos(t3))
-    ty2 = arctan2(np.sqrt(s), np.sqrt(r)) - np.arctan2(l3*np.sin(ty3), l2*np.cos(ty3))
+    t2 = np.arctan2(np.sqrt(s), np.sqrt(r)) - np.arctan2(l3*np.sin(t3), l2*np.cos(t3))
+    ty2 = np.arctan2(np.sqrt(s), np.sqrt(r)) - np.arctan2(l3*np.sin(ty3), l2*np.cos(ty3))
 
     R03 = [[np.cos(t1)*np.cos(t2*t3), -np.cos(t1)*np.sin(t2*t3), np.sin(t1)],
            [np.sin(t1)*np.cos(t2*t3), -np.sin(t1)*np.sin(t2*t3), -np.cos(t1)],
