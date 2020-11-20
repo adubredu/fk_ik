@@ -196,6 +196,50 @@ def quaternion_to_rot_matrix(quaternion):
                   [2*qx*qz - 2*qy*qw, 2*qy*qz + 2*qx*qw, 1 - 2*qx**2 - 2*qy**2]]
     return np.asarray(rot_matrix)
 
+
+def spatial_joints_elbow_down(pose):
+    x,y,z = pose 
+    l1 = 0.10391; l2 = 0.20573; l3 = 0.2; t2 = 0.23; t3 = -0.3064
+    
+    t1 = np.arctan2(y,x)
+
+    r2 = z - l1
+    r1 = np.sqrt(x**2 + y**2)
+    phi2 = np.arctan2(r2,r1)
+    r3 = np.sqrt(r1**2 + r2**2)
+    phi1 = np.arccos((l3**2 - l2**2 - r3**2)/(-2*l2*l3))
+
+    t2 += (phi2 - phi1)
+
+    phi3 = np.arccos((r3**2 - l2**2 - l3**2)/(-2*l2*l3))
+
+    t3 += (np.pi - phi3)
+
+    # t2 = (0.23+t2)
+    # t3 = (-0.3064+t3)
+    return (t1,t2,t3)
+
+def spatial_joints_elbow_up(pose):
+    x,y,z = pose 
+    l1 = 0.10391; l2 = 0.20573; l3 = 0.2; t2 = 0.23; t3 = -0.3064
+    
+    t1 = np.arctan2(y,x)
+
+    r2 = z - l1
+    r1 = np.sqrt(x**2 + y**2)
+    phi2 = np.arctan2(r1,r2)
+    r3 = np.sqrt(r1**2+r2**2)
+    phi1 = np.arccos((l3**2 - r3**2 - l2**2)/(-2*l2*r3))
+
+    t2 += (np.pi/2) - (phi2-phi1)
+
+    phi3 = np.arccos((r3**2 - l2**2 - l3**2)/(-2*l2*l3))
+
+    t3 += np.pi - phi3
+
+    return (t1,t2,t3)
+
+
 def IK_geometric(dh_params, pose):
     """!
     @brief      Get all possible joint configs that produce the pose.
