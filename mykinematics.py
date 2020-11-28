@@ -226,15 +226,18 @@ def spatial_joints_elbow_down(pose):
 def spatial_joints_elbow_up(pose):
     x,y,z = pose 
     # l1 = 0.10391; l2 = 0.20573; l3 = 0.2; t2 = 0.23; t3 = -0.3064
-    l1 = 0.10391; l2 = 0.20573; l3 = 0.2;
+    l1 = 0.7; l2 = 0.5; l3=0.5+0.125;
     t1 = np.arctan2(y,x)
     r1 = z-l1
     r2 = np.sqrt(x**2 + y**2)
     r3 = np.sqrt(r1**2+r2**2)
-    # print('num: ',(l3**2 - r3**2 - l2**2))
-    # print('denom: ',(-2*l2*r3))
-    # num1 = (l3**2 - r3**2 - l2**2)
-    # denom1 = (-2*l2*r3)
+    print('num: ',(l3**2 - r3**2 - l2**2))
+    print('denom: ',(-2*l2*r3))
+    num1 = (l3**2 - r3**2 - l2**2)
+    denom1 = (-2*l2*r3)
+    # if np.abs(num1) > np.abs(denom1):
+    #     phi1 = np.arccos(denom1/num1)
+    # else:
     phi1 = np.arccos((l3**2 - r3**2 - l2**2)/(-2*l2*r3))
 
     phi2 = np.arctan2(r2,r1)
@@ -279,7 +282,7 @@ def orientation_ik(t1,t2,t3,R, dh_params=None):
 
 
 def full_ik(pose, phi):
-    l6=0.17415
+    l6=0.25
     R = get_rot_matrix_from_euler(0,phi,0)
     print(R)
     # R = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
@@ -292,7 +295,7 @@ def full_ik(pose, phi):
     t1,t2,t3 = spatial_joints_elbow_up(oc)
     t4,t5,t6 = orientation_ik(t1,t2,t3,R)
 
-    return (t1,t2,t3,t5,t6)
+    return (t1,t2,t3,0,t5,t6)
     
 
 
