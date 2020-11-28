@@ -183,8 +183,6 @@ def to_s_matrix(w,v):
 
     @return     { description_of_the_return_value }
     """
-    # w_so3 = np.array([0,-w[2],w[1]],[w[2],0,-w[0]],[-w[1],w[0],0])
-    # s_se3 = np.hstack(np.vstack(w_so3,np.zeros(1,3)), np.vstack(v,0))
     S = [[0, -w[2], w[1], v[0]], [w[2], 0, -w[0], v[1]], [-w[1], w[0], 0, v[2]], [0, 0, 0, 0]]
     return S
 
@@ -228,28 +226,77 @@ def spatial_joints_elbow_down(pose):
 def spatial_joints_elbow_up(pose):
     x,y,z = pose 
     # l1 = 0.10391; l2 = 0.20573; l3 = 0.2; t2 = 0.23; t3 = -0.3064
-    l1 = 0.7; l2 = 0.5; l3=0.5;
+    l1 = 0.7; l2 = 0.5; l3=0.5+0.125;
     t1 = np.arctan2(y,x)
-    # z=-z
-    r1 = z - l1
+    r1 = z-l1
     r2 = np.sqrt(x**2 + y**2)
-    # phi2 = np.arctan2(r1,r2)
     r3 = np.sqrt(r1**2+r2**2)
+    print('num: ',(l3**2 - r3**2 - l2**2))
+    print('denom: ',(-2*l2*r3))
+    num1 = (l3**2 - r3**2 - l2**2)
+    denom1 = (-2*l2*r3)
+    # if np.abs(num1) > np.abs(denom1):
+    #     phi1 = np.arccos(denom1/num1)
+    # else:
     phi1 = np.arccos((l3**2 - r3**2 - l2**2)/(-2*l2*r3))
-
-    # t2 =    (np.pi/2)-(phi2 - phi1) 
-
-    # phi3 = np.arccos((r3**2 - l2**2 - l3**2)/(-2*l2*l3))
-
-    # t3 = angle_diff(np.pi , phi3)
 
     phi2 = np.arctan2(r2,r1)
     t2 = angle_diff((np.pi/2), angle_diff(phi1 , phi2))
-
+    num2 = (r3**2 - l2**2 - l3**2)
+    denom2 = (-2*l2*l3)
+    # if np.abs(num2) > np.abs(denom2):
+    #     phi3 = np.arccos(denom2/num2)
+    #     # t3=0
+    # else:
     phi3 = np.arccos((r3**2 - l2**2 - l3**2)/(-2*l2*l3))
     t3 = np.pi - phi3
 
     return (t1,t2,t3)
+
+
+def get_rot_matrix_from_euler(r,p,ya):
+    a = ya; b=p; y=r;
+    R = np.array([[0,0,0],[0,0,0],[0,0,0]])
+    R[0,0] = np.cos(a)*np.cos(b)
+    R[0,1] = np.cos(a)*np.sin(b)*np.sin(y)-np.sin(a)*np.cos(y)
+    R[0,2] = np.cos(a)*np.sin(b)*np.cos(y)+np.sin(a)*np.sin(y)
+    R[1,0] = np.sin(a)*np.cos(b)
+    R[1,1] = np.sin(a)*np.sin(b)*np.sin(y)+np.cos(a)*np.cos(y)
+    R[1,2] = np.sin(a)*np.sin(b)*np.cos(y)-np.cos(a)*np.sin(y)
+    R[2,0] = -np.sin(b)
+    R[2,1] = np.cos(b)*np.sin(y)
+    R[2,2] = np.cos(b)*np.cos(y)
+
+    return R
+
+def orientation_ik(t1,t2,t3,R, dh_params=None):
+    #use dh params to get R03 in rx200
+    R03 = [[-np.sin(t2), 0, np.cos(t2)], [np.cos(t2), 0, np.sin(t2)], [0,1,0]]
+    R36 = np.linalg.inv(R03)*R 
+    t5 = np.arccos(R36[2,2])
+    t6 = np.arccos(-R36[2,0]/np.sin(t5))
+    t4 = np.arccos(R36[1,2]/np.sin(t5))
+
+
+    return (t4, t5, t6)
+
+
+def full_ik(pose, phi):
+    l6=0.25
+    R = get_rot_matrix_from_euler(0,phi,0)
+    print(R)
+    # R = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
+    oc = [0,0,0] 
+    oc[0] = pose[0] - l6*R[0,0]
+    oc[1] = pose[1] - l6*R[1,0]
+    oc[2] = pose[2] - l6*R[2,0]
+    print(oc)
+    # oc = [1.125,0,0.7]
+    t1,t2,t3 = spatial_joints_elbow_up(oc)
+    t4,t5,t6 = orientation_ik(t1,t2,t3,R)
+
+    return (t1,t2,t3,0,t5,t6)
+    
 
 
 def IK_geometric(dh_params, pose):

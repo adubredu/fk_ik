@@ -22,7 +22,7 @@ arm = p.loadURDF('interbotix_descriptions/urdf/rx200.urdf')
 # 	print('')
 # print([x[0] for x in p.getJointStates(arm, [0,1,2,3,4])])
 
-p.setRealTimeSimulation(1)
+# p.setRealTimeSimulation(1)
 
 def control_joint(joint, value, minn, maxx):
 	global arm
@@ -97,12 +97,13 @@ while 1:
 	# print('FK POX              : ',FK_pox(joint_angles, m_mat, screw_list))
 	# print(' ')
 
-	po = p.getLinkState(arm, 2)[0]
-	rot = quaternion_to_rot_matrix(p.getLinkState(arm, 11)[1])
-	pose = (po, rot)
-
-	print('GT Joint angles  : ', joint_angles[:3])
-	print('Spatial eu joints: ', spatial_joints_elbow_up(po))
-	print('Spatial ed joints: ', spatial_joints_elbow_down(po))
+	po = p.getLinkState(arm, 11)[0]		
+	# rot = quaternion_to_rot_matrix(p.getLinkState(arm, 11)[1])
+	# pose = (po, rot)
+	print('Pose xyz         : ', po)
+	print('end orientation	: ',p.getEulerFromQuaternion(p.getLinkState(arm,11)[1]))
+	# print('GT Joint angles  : ', joint_angles[:3])
+	# print('Spatial eu joints: ', spatial_joints_elbow_up(po))
+	# print('Spatial ed joints: ', spatial_joints_elbow_down(po))
 	# print('IK Joint angles: ', IK_geometric(dh_params, pose))
 	print(' ')
