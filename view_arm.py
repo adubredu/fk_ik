@@ -17,7 +17,7 @@ p.loadURDF('plane.urdf')
 dh_params = parse_dh_param_file('config/rx200_dh.csv')
 m_mat, screw_list = parse_pox_param_file('config/rx200_pox.csv')
 arm = p.loadURDF('interbotix_descriptions/urdf/rx200.urdf')
-for i in range(p.getNumJoints(arm)):
+# for i in range(p.getNumJoints(arm)):
 	# print(p.getJointInfo(arm, i))
 	# print(p.getJointState(arm, i))
 	# print('')
@@ -167,12 +167,12 @@ def teleop():
 		# print('FK POX              : ',FK_pox(joint_angles, m_mat, screw_list))
 		# print(' ')
 
-		po = p.getLinkState(arm, 3)[0]
+		po = p.getLinkState(arm, 11)[0]
 		# rot = quaternion_to_rot_matrix(p.getLinkState(arm, 4)[1])
 		# pose = (po, rot)
 
 		print('Pose xyz         : ', po)
-		# print('end orientation: ',p.getEulerFromQuaternion(p.getLinkState(arm,11)[1]))
+		print('end orientation: ',p.getEulerFromQuaternion(p.getLinkState(arm,11)[1]))
 		print('GT Joint angles  : ', joint_angles)
 		print('Spatial eu joints: ', spatial_joints_elbow_up(po))
 		# print('Spatial ed joints: ', spatial_joints_elbow_down(po))
@@ -183,10 +183,10 @@ def teleop():
 def go_to_pose(pose):
 	# jsx = full_ik(pose, np.pi/2.0)
 	# orr2 = rot_to_quat(np.pi/2)
-	# orr = p.getQuaternionFromEuler((0,np.pi/2,0))
-	# jsx = p.calculateInverseKinematics(arm, 3, pose)#, orr2)
+	orr = p.getQuaternionFromEuler((0,np.pi/2,0))
+	jsx = p.calculateInverseKinematics(arm, 11, pose, orr)
 	# print('joints: ',js)
-	jsx = list(spatial_joints_elbow_up(pose)); jsx[1]+=1.375; jsx[2]-=1.4
+	# jsx = spatial_joints_elbow_up(pose) #jsx[1]+=1.375; jsx[2]-=1.4
 	
 	# print('orr1: ',orr)
 	# print('orr2: ',orr2)
@@ -196,24 +196,33 @@ def go_to_pose(pose):
 	time.sleep(2)
 	control_joint(1, jsx[1], -3.1415, 3.1415)
 	time.sleep(2)
-	control_joint(2, -jsx[2], -3.1415, 3.1415)
+	control_joint(2, jsx[2], -3.1415, 3.1415)
 	time.sleep(2)
-	# control_joint(3, jsx[3], -3.1415, 3.1415)
-	# time.sleep(2)
-	# control_joint(4, jsx[4], -3.1415, 3.1415)
-	# time.sleep(2)
+	control_joint(3, jsx[3], -3.1415, 3.1415)
+	time.sleep(2)
+	control_joint(4, jsx[4], -3.1415, 3.1415)
+	time.sleep(2)
 	# control_joint(10, jsx[5], -3.1415, 3.1415)
 	# time.sleep(2)
 
+#when bent: 0.214,0,0.131
 
 if __name__=='__main__':
 	# pass
 	# teleop()
-	# go_to_pose([0.24, 0, 0.3])
+	# go_to_pose([0.36, 0, 0.28])
+	# go_to_pose([0.214,0,0.131])
 	# go_to_pose([0.083,0.184,0.187])
-	go_to_pose([0.224,0.011,0.162])
+	# go_to_pose([0.224,0.011,0.162])
 	# go_to_pose([0.1533,-0.183,0.132])
-	po = p.getLinkState(arm, 3)[0]
+
+	# go_to_pose([0.1,0.23,0.01])
+	# go_to_pose([0.21,0.132,0.017])
+	go_to_pose([0.24,-0.0335,0.017])
+	# go_to_pose([0.2,-0.22,0.018])
+	# go_to_pose([0,-0.23,0.0267])
+
+	po = p.getLinkState(arm, 11)[0]
 	print('end pose: ', po)
 	print('end orientation: ',p.getEulerFromQuaternion(p.getLinkState(arm,11)[1]))
 	# # print('end angs: ',[x[0] for x in p.getJointStates(arm, [0,2,4])])

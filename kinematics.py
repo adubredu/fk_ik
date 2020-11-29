@@ -8,6 +8,7 @@ There are some functions to start with, you may need to implement a few more
 import numpy as np
 # expm is a matrix exponential function
 from scipy.linalg import expm
+from config_parse import *
 
 def clamp(angle):
     """!
@@ -52,9 +53,10 @@ def FK_dh(dh_params, joint_angles, link=4):
     for a in A:
         tf = np.matmul(tf, a)
     
-    (x,y,z,phi) = get_pose_from_T(tf)
-    phi = clamp(phi+1.5707)
-    return [x,y,z,phi]
+    return tf
+    # (x,y,z,phi) = get_pose_from_T(tf)
+    # phi = clamp(phi+1.5707)
+    # return [x,y,z,phi]
 
 
 
@@ -248,6 +250,9 @@ def spatial_joints_elbow_up(pose):
     phi3 = np.arccos((r3**2 - l2**2 - l3**2)/(-2*l2*l3))
     t3 = np.pi - phi3
 
+    t2 = t2+1.375
+    t3 = -(t3-1.4)
+
     return (t1,t2,t3)
 
 
@@ -268,7 +273,10 @@ def get_rot_matrix_from_euler(r,p,ya):
 
 def orientation_ik(t1,t2,t3,R, dh_params=None):
     #use dh params to get R03 in rx200
-    R03 = [[-np.sin(t2), 0, np.cos(t2)], [np.cos(t2), 0, np.sin(t2)], [0,1,0]]
+    # R03 = [[-np.sin(t2), 0, np.cos(t2)], [np.cos(t2), 0, np.sin(t2)], [0,1,0]]
+    ja=[t1,t2,t3]
+    H = FK_dh(dh_params, ja, link=2)
+    R03 = H[0:3,0:3]
     R36 = np.linalg.inv(R03)*R 
     t5 = np.arccos(R36[2,2])
     t6 = np.arccos(-R36[2,0]/np.sin(t5))
@@ -279,7 +287,8 @@ def orientation_ik(t1,t2,t3,R, dh_params=None):
 
 
 def full_ik(pose, phi):
-    l6=0.17415
+    # l6=0.17415
+    l6=0.151
     R = get_rot_matrix_from_euler(0,phi,0)
     print(R)
     # R = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
@@ -287,12 +296,13 @@ def full_ik(pose, phi):
     oc[0] = pose[0] - l6*R[0,0]
     oc[1] = pose[1] - l6*R[1,0]
     oc[2] = pose[2] - l6*R[2,0]
-    print(oc)
+    print("wrist center: ",oc)
     # oc = [1.125,0,0.7]
+    dh_params = parse_dh_param_file('config/rx200_dh.csv')
     t1,t2,t3 = spatial_joints_elbow_up(oc)
-    t4,t5,t6 = orientation_ik(t1,t2,t3,R)
-
-    return (t1,t2,t3,t5,t6)
+    t4,t5,t6 = orientation_ik(t1,t2,t3,R,dh_params)
+    # print(t5,t6)
+    return (t1,t2,t3,-0.8,0)
     
 
 

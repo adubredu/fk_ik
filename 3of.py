@@ -1,6 +1,6 @@
 import pybullet as p 
 import pybullet_data
-from kinematics import *
+from mykinematics import *
 from config_parse import *
 import time
 import numpy as np 
@@ -192,9 +192,9 @@ def go_to_pose(pose):
 if __name__=='__main__':
 	# pass
 	# teleop()
-	# go_to_pose([0.69, 0.55, 0.47])
+	go_to_pose([0.69, 0.55, 0.47])
 	# go_to_pose([1.125, 0.0, 0.45])
-	go_to_pose([0.027,-1.021,0.8044])
+	# go_to_pose([0.027,-1.021,0.8044])
 	po = p.getLinkState(arm, 11)[0]
 	print('end pose: ', po)
 	print('end orientation: ',p.getEulerFromQuaternion(p.getLinkState(arm,11)[1]))
